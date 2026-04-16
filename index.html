@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Brossage">
+<title>Mon brossage</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,sans-serif;background:#f8f7ff;min-height:100vh;padding:16px 10px 40px;max-width:420px;margin:0 auto;user-select:none}
+  h1{text-align:center;font-size:20px;font-weight:600;color:#1e1b4b;margin:8px 0 16px}
+  .icon{text-align:center;font-size:34px;margin-bottom:4px}
+  .row{border-radius:18px;padding:14px 12px;margin-bottom:14px}
+  .row.matin{background:#fff9e6;border:2px solid #f5c842}
+  .row.soir{background:#f0eeff;border:2px solid #a89ee8}
+  .badge{display:inline-block;border-radius:20px;padding:4px 16px;font-size:16px;font-weight:600;margin-bottom:12px}
+  .matin .badge{background:#fde68a;color:#92400e}
+  .soir .badge{background:#c4b9f9;color:#3730a3}
+  .subgrid{display:grid;gap:8px;margin-bottom:6px}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .cell-top{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .cell-label{font-size:13px;font-weight:600;color:#6b7280}
+  .cell-label.today-matin{font-weight:800;color:#92400e}
+  .cell-label.today-soir{font-weight:800;color:#3730a3}
+  .cell-emoji{font-size:26px}
+  .boxes{display:grid;gap:8px;margin-bottom:10px}
+  .cell-box{width:58px;height:58px;border-radius:16px;background:rgba(255,255,255,0.7);border:2px solid rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;font-size:34px;transition:transform 0.1s;margin:0 auto}
+  .cell-box.checked.matin-box{background:#fde68a;border-color:#f5c842}
+  .cell-box.checked.soir-box{background:#c4b9f9;border-color:#a89ee8}
+  .cell-box:active{transform:scale(0.85)}
+  @keyframes pop{0%{transform:scale(0) rotate(-20deg);opacity:0}60%{transform:scale(1.35) rotate(5deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+  .pop{animation:pop 0.45s cubic-bezier(.36,1.6,.4,1) forwards}
+  .stars-section{background:#fff;border-radius:18px;padding:14px 16px;text-align:center;border:1.5px solid #e5e7eb;margin-top:4px}
+  .stars-title{font-size:13px;color:#6b7280;font-weight:600;margin-bottom:8px}
+  .stars-row{display:flex;justify-content:center;gap:7px;margin-bottom:6px}
+  .star{font-size:26px;transition:filter 0.3s}
+  .star.empty{filter:grayscale(1) opacity(0.3)}
+  .stars-hint{font-size:13px;color:#6b7280}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+  .modal{background:#fff;border-radius:24px;padding:28px 24px;text-align:center;max-width:300px;width:100%}
+  .modal h2{font-size:20px;font-weight:600;color:#1e1b4b;margin:8px 0 6px}
+  .modal p{font-size:14px;color:#6b7280;margin-bottom:20px}
+  .reward-btns{display:flex;gap:12px;justify-content:center}
+  .reward-btn{background:#fde68a;border:none;border-radius:16px;padding:14px 18px;cursor:pointer;font-size:14px;font-weight:600;color:#92400e;display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
+  .reward-btn span{font-size:32px}
+  .reward-btn:active{transform:scale(0.95)}
+  .congrats-big{font-size:58px;margin-bottom:8px}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:0}}
+  .confetti-piece{position:fixed;top:-20px;font-size:22px;animation:fall 1.6s ease-in forwards;pointer-events:none;z-index:200}
+  .reset-btn{display:block;margin:18px auto 0;background:none;border:1px solid #d1d5db;border-radius:20px;padding:6px 16px;font-size:12px;color:#9ca3af;cursor:pointer}
+  .pin-row{display:flex;gap:10px;justify-content:center;margin:14px 0}
+  .pin-row input{width:48px;height:48px;border:1.5px solid #d1d5db;border-radius:12px;font-size:22px;text-align:center;outline:none}
+  .pin-row input:focus{border-color:#a89ee8}
+</style>
+</head>
+<body>
+<div class="icon">🦷</div>
+<h1>Mon tableau de brossage</h1>
+
+<div class="row matin">
+  <div class="badge">☀️ Matin</div>
+  <div id="matin-top-a" class="subgrid g4"></div>
+  <div id="matin-box-a" class="boxes g4"></div>
+  <div id="matin-top-b" class="subgrid g3"></div>
+  <div id="matin-box-b" class="boxes g3"></div>
+</div>
+
+<div class="row soir">
+  <div class="badge">🌙 Soir</div>
+  <div id="soir-top-a" class="subgrid g4"></div>
+  <div id="soir-box-a" class="boxes g4"></div>
+  <div id="soir-top-b" class="subgrid g3"></div>
+  <div id="soir-box-b" class="boxes g3"></div>
+</div>
+
+<div class="stars-section">
+  <div class="stars-title">Barre de récompense</div>
+  <div class="stars-row" id="stars-row"></div>
+  <div class="stars-hint" id="stars-hint"></div>
+</div>
+
+<button class="reset-btn" onclick="document.getElementById('pin-overlay').style.display='flex'">⚙️ Réinitialiser</button>
+
+<div class="overlay" id="pin-overlay" style="display:none">
+  <div class="modal">
+    <div style="font-size:32px">🔒</div>
+    <h2>Code parent</h2>
+    <p>Entre le code à 4 chiffres</p>
+    <div class="pin-row">
+      <input type="password" inputmode="numeric" maxlength="1" id="p1" oninput="nextPin(this,'p2')">
+      <input type="password" inputmode="numeric" maxlength="1" id="p2" oninput="nextPin(this,'p3')">
+      <input type="password" inputmode="numeric" maxlength="1" id="p3" oninput="nextPin(this,'p4')">
+      <input type="password" inputmode="numeric" maxlength="1" id="p4" oninput="checkPin()">
+    </div>
+    <p id="pin-error" style="color:#e24b4a;font-size:13px;min-height:18px"></p>
+    <button class="reward-btn" style="width:100%;margin-top:4px;background:#f3f4f6;color:#374151" onclick="closePinOverlay()">Annuler</button>
+  </div>
+</div>
+
+<div class="overlay" id="reset-confirm-overlay" style="display:none">
+  <div class="modal">
+    <div style="font-size:32px">🔄</div>
+    <h2>Tout remettre à zéro ?</h2>
+    <p>Cases et étoiles seront effacées</p>
+    <div style="display:flex;gap:10px">
+      <button class="reward-btn" style="background:#f3f4f6;color:#374151" onclick="document.getElementById('reset-confirm-overlay').style.display='none'">Annuler</button>
+      <button class="reward-btn" style="background:#fecaca;color:#991b1b" onclick="doReset()">Remettre à zéro</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="reward-overlay" style="display:none">
+  <div class="modal">
+    <div style="font-size:40px">🎉</div>
+    <h2>Bravo champion !</h2>
+    <p>Tu as gagné une surprise !<br>Choisis :</p>
+    <div class="reward-btns">
+      <button class="reward-btn" onclick="claimReward('calin')"><span>🤗</span>Gros câlin</button>
+      <button class="reward-btn" onclick="claimReward('choco')"><span>📖</span>Une histoire de plus</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="congrats-overlay" style="display:none" onclick="document.getElementById('congrats-overlay').style.display='none'">
+  <div class="modal">
+    <div class="congrats-big" id="congrats-emoji"></div>
+    <h2 id="congrats-text"></h2>
+    <p style="margin-top:8px;margin-bottom:0">Appuie pour continuer</p>
+  </div>
+</div>
+
+<script>
+const DAYS=[{l:'Lun',e:'🦕'},{l:'Mar',e:'🚀'},{l:'Mer',e:'🐊'},{l:'Jeu',e:'🦈'},{l:'Ven',e:'🤖'},{l:'Sam',e:'⚽'},{l:'Dim',e:'🏆'}];
+const STICKERS=['🌟','✨','💥','🎉','🎊','⭐','🌈','🔥','💫','🎯'];
+const PIN='1234';
+const GROUPS=[[0,1,2,3],[4,5,6]];
+
+function getMonday(d){const day=d.getDay(),diff=d.getDate()-(day===0?6:day-1);return new Date(new Date(d).setDate(diff))}
+function weekKey(){const m=getMonday(new Date());return m.getFullYear()+'-'+(m.getMonth()+1)+'-'+m.getDate()}
+function todayIndex(){const d=new Date().getDay();return d===0?6:d-1}
+
+let state=JSON.parse(localStorage.getItem('brushing3')||'{"checks":{},"stars":0,"week":""}');
+if(state.week!==weekKey()){state={checks:{},stars:state.stars||0,week:weekKey()};save();}
+
+function save(){localStorage.setItem('brushing3',JSON.stringify(state))}
+
+function buildGrids(time){
+  const today=todayIndex();
+  GROUPS.forEach((group,gi)=>{
+    const suffix=gi===0?'a':'b';
+    const topEl=document.getElementById(time+'-top-'+suffix);
+    const boxEl=document.getElementById(time+'-box-'+suffix);
+    topEl.innerHTML='';boxEl.innerHTML='';
+    group.forEach(i=>{
+      const isToday=i===today;
+      const t=document.createElement('div');
+      t.className='cell-top';
+      t.innerHTML=`<div class="cell-label ${isToday?'today-'+time:''}">${DAYS[i].l}</div><div class="cell-emoji">${DAYS[i].e}</div>`;
+      topEl.appendChild(t);
+      const key=i+'-'+time;
+      const checked=!!state.checks[key];
+      const isPast=i<today,isFuture=i>today;
+      const wrap=document.createElement('div');
+      wrap.style.opacity=(isPast||isFuture)?'0.38':'1';
+      const box=document.createElement('div');
+      box.className='cell-box'+(checked?' checked '+time+'-box':'');
+      box.id='box-'+key;
+      if(isToday) box.style.outline=`3px solid ${time==='matin'?'#f5c842':'#a89ee8'}`,box.style.outlineOffset='2px';
+      box.innerHTML=checked?(state.checks[key]||''):'';
+      if(!checked&&isToday) wrap.onclick=()=>tap(i,time);
+      wrap.appendChild(box);boxEl.appendChild(wrap);
+    });
+  });
+}
+
+function tap(day,time){
+  const key=day+'-'+time;
+  if(state.checks[key]) return;
+  const sticker=STICKERS[Math.floor(Math.random()*STICKERS.length)];
+  state.checks[key]=sticker;
+  state.stars=Math.min((state.stars||0)+1,7);
+  save();
+  const box=document.getElementById('box-'+key);
+  box.className='cell-box checked '+time+'-box';
+  box.innerHTML=`<span class="pop">${sticker}</span>`;
+  box.parentElement.onclick=null;
+  updateStars();
+  if(state.stars>=7) setTimeout(()=>{launchConfetti();document.getElementById('reward-overlay').style.display='flex';},500);
+}
+
+function updateStars(){
+  const row=document.getElementById('stars-row');
+  row.innerHTML='';
+  for(let i=0;i<7;i++){const s=document.createElement('div');s.className='star'+(i<state.stars?'':' empty');s.textContent='⭐';row.appendChild(s);}
+  const left=7-state.stars;
+  document.getElementById('stars-hint').textContent=left>0?`${left} étoile${left>1?'s':''} pour la surprise !`:'🎉 Bravo !';
+}
+
+function launchConfetti(){
+  const emojis=['🌟','✨','💥','🎊','⭐','🎉'];
+  for(let i=0;i<20;i++){
+    const el=document.createElement('div');el.className='confetti-piece';
+    el.textContent=emojis[i%6];el.style.left=Math.random()*100+'vw';
+    el.style.animationDuration=(1.2+Math.random())+'s';el.style.animationDelay=(Math.random()*0.5)+'s';
+    document.body.appendChild(el);setTimeout(()=>el.remove(),2500);
+  }
+}
+
+function claimReward(type){
+  document.getElementById('reward-overlay').style.display='none';
+  document.getElementById('congrats-emoji').textContent=type==='calin'?'🤗':'📖';
+  document.getElementById('congrats-text').textContent=type==='calin'?'Gros câlin !':'Une histoire de plus !';
+  document.getElementById('congrats-overlay').style.display='flex';
+  state.stars=0;save();updateStars();
+}
+
+function nextPin(el,nextId){if(el.value.length===1)document.getElementById(nextId).focus()}
+function checkPin(){
+  const code=['p1','p2','p3','p4'].map(id=>document.getElementById(id).value).join('');
+  if(code.length<4) return;
+  if(code===PIN){closePinOverlay();document.getElementById('reset-confirm-overlay').style.display='flex';}
+  else{document.getElementById('pin-error').textContent='Code incorrect';['p1','p2','p3','p4'].forEach(id=>{document.getElementById(id).value=''});document.getElementById('p1').focus();}
+}
+function closePinOverlay(){
+  document.getElementById('pin-overlay').style.display='none';
+  ['p1','p2','p3','p4'].forEach(id=>{document.getElementById(id).value=''});
+  document.getElementById('pin-error').textContent='';
+}
+function doReset(){
+  state={checks:{},stars:0,week:weekKey()};save();
+  buildGrids('matin');buildGrids('soir');updateStars();
+  document.getElementById('reset-confirm-overlay').style.display='none';
+}
+
+buildGrids('matin');buildGrids('soir');updateStars();
+</script>
+</body>
+</html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Brossage">
+<title>Mon brossage</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,sans-serif;background:#f8f7ff;min-height:100vh;padding:16px 10px 40px;max-width:420px;margin:0 auto;user-select:none}
+  h1{text-align:center;font-size:20px;font-weight:600;color:#1e1b4b;margin:8px 0 16px}
+  .icon{text-align:center;font-size:34px;margin-bottom:4px}
+  .row{border-radius:18px;padding:14px 12px;margin-bottom:14px}
+  .row.matin{background:#fff9e6;border:2px solid #f5c842}
+  .row.soir{background:#f0eeff;border:2px solid #a89ee8}
+  .badge{display:inline-block;border-radius:20px;padding:4px 16px;font-size:16px;font-weight:600;margin-bottom:12px}
+  .matin .badge{background:#fde68a;color:#92400e}
+  .soir .badge{background:#c4b9f9;color:#3730a3}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .cell{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+  .cell-label{font-size:11px;font-weight:600;color:#6b7280}
+  .cell-emoji{font-size:22px}
+  .cell-box{width:44px;height:44px;border-radius:14px;background:rgba(255,255,255,0.7);border:2px solid rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;font-size:26px;transition:transform 0.1s}
+  .cell-box.checked.matin-box{background:#fde68a;border-color:#f5c842}
+  .cell-box.checked.soir-box{background:#c4b9f9;border-color:#a89ee8}
+  .cell:active .cell-box{transform:scale(0.85)}
+  @keyframes pop{0%{transform:scale(0) rotate(-20deg);opacity:0}60%{transform:scale(1.35) rotate(5deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+  .pop{animation:pop 0.45s cubic-bezier(.36,1.6,.4,1) forwards}
+  .stars-section{background:#fff;border-radius:18px;padding:14px 16px;text-align:center;border:1.5px solid #e5e7eb;margin-top:4px}
+  .stars-title{font-size:13px;color:#6b7280;font-weight:600;margin-bottom:8px}
+  .stars-row{display:flex;justify-content:center;gap:7px;margin-bottom:6px}
+  .star{font-size:26px;transition:filter 0.3s}
+  .star.empty{filter:grayscale(1) opacity(0.3)}
+  .stars-hint{font-size:13px;color:#6b7280}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+  .modal{background:#fff;border-radius:24px;padding:28px 24px;text-align:center;max-width:300px;width:100%}
+  .modal h2{font-size:20px;font-weight:600;color:#1e1b4b;margin:8px 0 6px}
+  .modal p{font-size:14px;color:#6b7280;margin-bottom:20px}
+  .reward-btns{display:flex;gap:12px;justify-content:center}
+  .reward-btn{background:#fde68a;border:none;border-radius:16px;padding:14px 18px;cursor:pointer;font-size:14px;font-weight:600;color:#92400e;display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
+  .reward-btn span{font-size:32px}
+  .reward-btn:active{transform:scale(0.95)}
+  .congrats-big{font-size:58px;margin-bottom:8px}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:0}}
+  .confetti-piece{position:fixed;top:-20px;font-size:22px;animation:fall 1.6s ease-in forwards;pointer-events:none;z-index:200}
+  .reset-btn{display:block;margin:18px auto 0;background:none;border:1px solid #d1d5db;border-radius:20px;padding:6px 16px;font-size:12px;color:#9ca3af;cursor:pointer}
+  .pin-row{display:flex;gap:10px;justify-content:center;margin:14px 0}
+  .pin-row input{width:48px;height:48px;border:1.5px solid #d1d5db;border-radius:12px;font-size:22px;text-align:center;outline:none}
+  .pin-row input:focus{border-color:#a89ee8}
+</style>
+</head>
+<body>
+<div class="icon">🦷</div>
+<h1>Mon tableau de brossage</h1>
+
+<div class="row matin">
+  <div class="badge">☀️ Matin</div>
+  <div class="grid" id="grid-matin"></div>
+</div>
+
+<div class="row soir">
+  <div class="badge">🌙 Soir</div>
+  <div class="grid" id="grid-soir"></div>
+</div>
+
+<div class="stars-section">
+  <div class="stars-title">Barre de récompense</div>
+  <div class="stars-row" id="stars-row"></div>
+  <div class="stars-hint" id="stars-hint"></div>
+</div>
+
+<button class="reset-btn" onclick="document.getElementById('pin-overlay').style.display='flex'">⚙️ Réinitialiser</button>
+
+<div class="overlay" id="pin-overlay" style="display:none">
+  <div class="modal">
+    <div style="font-size:32px">🔒</div>
+    <h2 style="margin:8px 0 6px">Code parent</h2>
+    <p>Entre le code à 4 chiffres</p>
+    <div class="pin-row">
+      <input type="password" inputmode="numeric" maxlength="1" id="p1" oninput="nextPin(this,'p2')">
+      <input type="password" inputmode="numeric" maxlength="1" id="p2" oninput="nextPin(this,'p3')">
+      <input type="password" inputmode="numeric" maxlength="1" id="p3" oninput="nextPin(this,'p4')">
+      <input type="password" inputmode="numeric" maxlength="1" id="p4" oninput="checkPin()">
+    </div>
+    <p id="pin-error" style="color:#e24b4a;font-size:13px;min-height:18px"></p>
+    <button class="reward-btn" style="width:100%;margin-top:4px;background:#f3f4f6;color:#374151" onclick="closePinOverlay()">Annuler</button>
+  </div>
+</div>
+
+<div class="overlay" id="reset-confirm-overlay" style="display:none">
+  <div class="modal">
+    <div style="font-size:32px">🔄</div>
+    <h2 style="margin:8px 0 6px">Tout remettre à zéro ?</h2>
+    <p>Cases et étoiles seront effacées</p>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="reward-btn" style="background:#f3f4f6;color:#374151" onclick="document.getElementById('reset-confirm-overlay').style.display='none'">Annuler</button>
+      <button class="reward-btn" style="background:#fecaca;color:#991b1b" onclick="doReset()">Remettre à zéro</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="reward-overlay" style="display:none">
+  <div class="modal">
+    <div style="font-size:40px">🎉</div>
+    <h2>Bravo champion !</h2>
+    <p>Tu as gagné une surprise !<br>Choisis :</p>
+    <div class="reward-btns">
+      <button class="reward-btn" onclick="claimReward('calin')"><span>🤗</span>Gros câlin</button>
+      <button class="reward-btn" onclick="claimReward('choco')"><span>📖</span>Une histoire de plus</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="congrats-overlay" style="display:none" onclick="document.getElementById('congrats-overlay').style.display='none'">
+  <div class="modal">
+    <div class="congrats-big" id="congrats-emoji"></div>
+    <h2 id="congrats-text"></h2>
+    <p style="margin-top:8px;margin-bottom:0">Appuie pour continuer</p>
+  </div>
+</div>
+
+<script>
+const DAYS = [{l:'Lun',e:'🦕'},{l:'Mar',e:'🚀'},{l:'Mer',e:'🐊'},{l:'Jeu',e:'🦈'},{l:'Ven',e:'🤖'},{l:'Sam',e:'⚽'},{l:'Dim',e:'🏆'}];
+const STICKERS = ['🌟','✨','💥','🎉','🎊','⭐','🌈','🔥','💫','🎯'];
+
+function getMonday(d){const day=d.getDay(),diff=d.getDate()-(day===0?6:day-1);return new Date(d.setDate(diff))}
+function weekKey(){const m=getMonday(new Date());return m.getFullYear()+'-'+(m.getMonth()+1)+'-'+m.getDate()}
+function todayIndex(){const d=new Date().getDay();return d===0?6:d-1}
+
+let state = JSON.parse(localStorage.getItem('brushing2') || '{"checks":{},"stars":0,"week":""}');
+if(state.week !== weekKey()){state={checks:{},stars:state.stars,week:weekKey()};localStorage.setItem('brushing2',JSON.stringify(state));}
+
+function save(){localStorage.setItem('brushing2',JSON.stringify(state))}
+
+function buildGrid(time){
+  const grid = document.getElementById('grid-'+time);
+  grid.innerHTML = '';
+  const today = todayIndex();
+  DAYS.forEach((d,i)=>{
+    const key = i+'-'+time;
+    const checked = !!state.checks[key];
+    const isToday = i===today;
+    const isFuture = i>today;
+    const isPast = i<today;
+    const dim = (isFuture || isPast) ? '0.38' : '1';
+    const div = document.createElement('div');
+    div.className = 'cell';
+    div.style.opacity = dim;
+    const highlight = isToday ? 'outline:3px solid '+(time==='matin'?'#f5c842':'#a89ee8')+';outline-offset:2px;' : '';
+    div.innerHTML = `<div class="cell-label" style="${isToday?'font-weight:800;color:'+(time==='matin'?'#92400e':'#3730a3'):''}">${d.l}</div><div class="cell-emoji">${d.e}</div><div class="cell-box ${checked?'checked '+time+'-box':''}" id="box-${key}" style="${highlight}">${checked?(state.checks[key]||''):'&nbsp;'}</div>`;
+    if(!checked && isToday) div.onclick = ()=>tap(i,time);
+    grid.appendChild(div);
+  });
+}
+
+function tap(day,time){
+  const key = day+'-'+time;
+  if(state.checks[key]) return;
+  const sticker = STICKERS[Math.floor(Math.random()*STICKERS.length)];
+  state.checks[key] = sticker;
+  state.stars = Math.min((state.stars||0)+1, 7);
+  save();
+  const box = document.getElementById('box-'+key);
+  box.className = 'cell-box checked '+time+'-box';
+  box.innerHTML = `<span class="pop">${sticker}</span>`;
+  box.parentElement.onclick = null;
+  updateStars();
+  if(state.stars >= 7) setTimeout(()=>{launchConfetti();document.getElementById('reward-overlay').style.display='flex';},500);
+}
+
+function updateStars(){
+  const row = document.getElementById('stars-row');
+  row.innerHTML = '';
+  for(let i=0;i<7;i++){
+    const s = document.createElement('div');
+    s.className = 'star'+(i<state.stars?'':' empty');
+    s.textContent = '⭐';
+    row.appendChild(s);
+  }
+  const hint = document.getElementById('stars-hint');
+  const left = 7 - state.stars;
+  hint.textContent = left > 0 ? `${left} étoile${left>1?'s':''} pour la surprise !` : '🎉 Bravo !';
+}
+
+function launchConfetti(){
+  const emojis=['🌟','✨','💥','🎊','⭐','🎉'];
+  for(let i=0;i<20;i++){
+    const el=document.createElement('div');
+    el.className='confetti-piece';
+    el.textContent=emojis[i%6];
+    el.style.left=Math.random()*100+'vw';
+    el.style.animationDuration=(1.2+Math.random()*1)+'s';
+    el.style.animationDelay=(Math.random()*0.5)+'s';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),2500);
+  }
+}
+
+function claimReward(type){
+  document.getElementById('reward-overlay').style.display='none';
+  const emoji = type==='calin'?'🤗':'🍫';
+  const text = type==='calin'?'Gros câlin !':'Une histoire de plus !';
+  document.getElementById('congrats-emoji').textContent=emoji;
+  document.getElementById('congrats-text').textContent=text;
+  document.getElementById('congrats-overlay').style.display='flex';
+  state.stars=0;save();
+  updateStars();
+}
+
+const PIN = '1234';
+function nextPin(el,nextId){if(el.value.length===1)document.getElementById(nextId).focus()}
+function checkPin(){
+  const code = ['p1','p2','p3','p4'].map(id=>document.getElementById(id).value).join('');
+  if(code.length<4) return;
+  if(code===PIN){closePinOverlay();document.getElementById('reset-confirm-overlay').style.display='flex';}
+  else{document.getElementById('pin-error').textContent='Code incorrect';['p1','p2','p3','p4'].forEach(id=>{document.getElementById(id).value=''});document.getElementById('p1').focus();}
+}
+function closePinOverlay(){
+  document.getElementById('pin-overlay').style.display='none';
+  ['p1','p2','p3','p4'].forEach(id=>{document.getElementById(id).value=''});
+  document.getElementById('pin-error').textContent='';
+}
+function doReset(){
+  state={checks:{},stars:0,week:weekKey()};save();
+  buildGrid('matin');buildGrid('soir');updateStars();
+  document.getElementById('reset-confirm-overlay').style.display='none';
+}
+
+
+buildGrid('soir');
+updateStars();
+</script>
+</body>
+</html>
